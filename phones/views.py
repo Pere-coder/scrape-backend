@@ -8,6 +8,70 @@ from selenium.common.exceptions import NoSuchElementException
 
 
 
+
+@csrf_exempt
+def Items(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            param = data.get('text', 'nokia')
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        
+        driver = webdriver.Chrome() 
+        url = f"https://www.jumia.com.ng/catalog/?q={param}"
+        try:
+            driver.get(url)
+            
+            # Wait for the page to load completely, you may need to add a wait mechanism here
+            
+            Techno_elements = driver.find_elements(By.CSS_SELECTOR, 'a.core')
+            
+            products = []
+            
+            for element in Techno_elements:
+                product_info = {}
+                
+                text = element.text
+                parts = re.split(r'\(\d+\)', text)
+                parts = [part.strip() for part in parts if part.strip()]
+                
+                combined_text = " ".join(parts)
+
+                
+                link = element.get_attribute('href')
+    
+                # Get the image (src attribute) from the element's child img tag
+                image_element = element.find_element(By.TAG_NAME, 'img')
+                image_src = ""
+                image_src = image_element.get_attribute('data-src') or image_element.get_attribute('src')
+        
+                # Append the processed text, link, and image to the products list
+                products.append({
+                    'description': combined_text,
+                    'link': link,
+                    'image': image_src
+                })
+            # Close the driver after scraping
+            driver.quit()
+            
+            # Return JSON response with the parsed products data
+            return JsonResponse(products, safe=False)
+        
+        except Exception as e:
+            # Handle exceptions gracefully
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+
+
+
+
+
+
+
 # latest smart phone deals
 @csrf_exempt
 def latest_offers(request):
@@ -33,57 +97,4 @@ def latest_offers(request):
         return JsonResponse(products, safe=False)
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-@csrf_exempt
-def techno_offers(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            param = data.get('name', 'techno')
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        
-        driver = webdriver.Chrome()
-        url = f"https://www.jumia.com.ng/mlp-stay-connected-deals/android-phones/{param}/#catalog-listing"
-        
-        try:
-            driver.get(url)
-            
-            # Wait for the page to load completely, you may need to add a wait mechanism here
-            
-            Techno_elements = driver.find_elements(By.CSS_SELECTOR, 'a.core')
-            
-            products = []
-            
-            for element in Techno_elements:
-                product_info = {}
-                
-                text = element.text
-                parts = re.split(r'\(\d+\)', text)
-                parts = [part.strip() for part in parts if part.strip()]
-                
-                combined_text = " ".join(parts)
 
-                
-                link = element.get_attribute('href')
-    
-                # Get the image (src attribute) from the element's child img tag
-                image_element = element.find_element(By.TAG_NAME, 'img')
-                image_src = image_element.get_attribute('src') if image_element else ''
-                
-                # Append the processed text, link, and image to the products list
-                products.append({
-                    'description': combined_text,
-                    'link': link,
-                    'image': image_src
-                })
-            # Close the driver after scraping
-            driver.quit()
-            
-            # Return JSON response with the parsed products data
-            return JsonResponse(products, safe=False)
-        
-        except Exception as e:
-            # Handle exceptions gracefully
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    return JsonResponse({'error': 'Invalid request method'}, status=400)
