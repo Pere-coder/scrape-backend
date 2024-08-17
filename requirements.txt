@@ -53,3 +53,4 @@ wsproto==1.2.0
 Django==4.2.3
 djangorestframework==3.14.0
 drf-yasg==1.21.6
+django-cors-headers==3.11.0
